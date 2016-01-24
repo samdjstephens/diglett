@@ -6,11 +6,13 @@ Usage:
     diglett tunnel <name>
     diglett close <name>
     diglett add <name> <ip> <port> [<localport>]
+    diglett ls
 
 Options:
     tunnel - create an SSH tunnel
     close - close an SSH tunnel by name
     add - add a new tunnel configuration
+    ls - list tunnels
     name - name identifier for tunnel
     ip - remote host port
     port - port to tunnel to
@@ -63,8 +65,21 @@ def close(name):
         print "Tunnel {} not open".format(name)
 
 
+def list_tunnels():
+    uid_name_lookup = {conf['uid']: confname
+                       for confname, conf in configs.iteritems()}
+    for proc in psutil.process_iter():
+        try:
+            cmdline = proc.cmdline()
+        except psutil.Error:
+            continue
+        if ((isinstance(cmdline, list) and
+                len(cmdline) and cmdline[-1] in uid_name_lookup)):
+            print uid_name_lookup[cmdline[-1]], proc.pid
+
+
 def add():
-    return
+    raise NotImplementedError("Add functionality not implemented")
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
@@ -74,5 +89,7 @@ if __name__ == "__main__":
         close(args['<name>'])
     elif args['add']:
         add()
+    elif args['ls']:
+        list_tunnels()
     else:
         raise NotImplementedError("Mode not implemented")
