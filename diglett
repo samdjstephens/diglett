@@ -3,9 +3,9 @@
 Diglett
 
 Usage:
-    diglett tunnel <name> [<localport>]
+    diglett tunnel <name> [<localport>] [--webserver|-s]
     diglett close <name>
-    diglett add <name> <ip> <port> [<localport>]
+    diglett add <name> <username> <hostname> <port> [<localport>]
     diglett ls
 
 Options:
@@ -14,58 +14,54 @@ Options:
     add - add a new tunnel configuration
     ls - list tunnels
     name - name identifier for tunnel
-    ip - remote host port
+    username - username on remote host
+    hostname - remote host port
     port - port to tunnel to
+    --webserver|-s - Open a web server on the remote port
 """
-
-
 import subprocess
+import uuid
+
 import psutil
 import docopt
+from diglett import configs
+"""
+TODO:
+x JSON save file not configs dict
+- allow user to tunnel somewhere that isnt saved
+- allow deletion of config option
+- allow listing of all configs (extra arg to ls mode)
+- auto-complete of config names in command line
+- create / close multiple connections in one command
+"""
+
+tunnel_configs = configs.load_config()
 
 
-configs = {
-    "jenkins": {
-        "hostname": "jenkins",
-        "user": "sam",
-        "port": 8080,
-        "localport": 8080,
-        "uid": "90ebb79f8d9342248ac938cca31b67fe"
-    },
-    "adr-client": {
-        "hostname": "dev-services",
-        "user": "gi",
-        "port": "8000",
-        "localport": "8000",
-        "uid": "5529d8a7e6cd49fbad26f57f8a3469af"
-    },
-    "adr-server": {
-        "hostname": "dev-services",
-        "user": "gi",
-        "port": "5000",
-        "localport": "5000",
-        "uid": "b72ef7d47fae4287acb23b574f242b1e"
-    }
-}
-
-
-def tunnel(name, localport=None):
-    conf = dict(configs[name].items())
-    if localport is not None:
-        conf['localport'] = localport
-    proc = subprocess.Popen(['ssh',
-                             '-f',
-                             '{user}@{hostname}'.format(**conf),
-                             '-L',
-                             '{localport}:localhost:{port}'.format(**conf),
-                             '-N',
-                             conf['uid']])
-    print "Tunnel opened to {} on local port {}".format(name, conf['localport'])
+def tunnel(name, localport, web_server):
+    conf = tunnel_configs[name]
+    localport = localport or conf["localport"]
+    ssh_command = build_ssh_command(conf, localport, web_server)
+    proc = subprocess.Popen(ssh_command)
+    print "Tunnel opened to {} on local port {}".format(name, localport)
     return
 
 
+def build_ssh_command(conf, localport, web_server):
+    conf = dict(conf.items())
+    conf['localport'] = localport
+
+    remote_command = "python -m SimpleHTTPServer {}".format(
+        conf['port']) if web_server else "-N"
+
+    ssh_command = ['ssh', '-f', '{user}@{hostname}'.format(**conf), '-L',
+                   '{localport}:localhost:{port}'.format(**conf),
+                   remote_command, conf['uid']]
+    return ssh_command
+
+
 def close(name):
-    conf = configs[name]
+    conf = tunnel_configs[name]
     tunnel_proc = None
     for proc in iter_proc():
         cmdline = proc.cmdline()
@@ -80,7 +76,7 @@ def close(name):
 
 def list_tunnels():
     uid_name_lookup = {conf['uid']: confname
-                       for confname, conf in configs.iteritems()}
+                       for confname, conf in tunnel_configs.iteritems()}
     for proc in iter_proc():
         cmdline = proc.cmdline()
         if ((isinstance(cmdline, list) and
@@ -98,17 +94,28 @@ def iter_proc():
             yield proc
 
 
-def add():
-    raise NotImplementedError("Add functionality not implemented")
+def add(name, username, hostname, port, localport):
+    conf = {
+        name: {
+            "hostname": hostname,
+            "localport": localport if localport is not None else port,
+            "port": port,
+            "uid": uuid.uuid4().hex,
+            "user": username
+        }
+    }
+    configs.add_to_config(conf, tunnel_configs)
+
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     if args['tunnel']:
-        tunnel(args['<name>'], args['<localport>'])
+        tunnel(args['<name>'], args['<localport>'], args['--webserver'])
     elif args['close']:
         close(args['<name>'])
     elif args['add']:
-        add()
+        add(args['<name>'], args['<username>'], args['<hostname>'],
+            args['<port>'], args['<localport>'])
     elif args['ls']:
         list_tunnels()
     else:
