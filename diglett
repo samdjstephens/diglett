@@ -54,7 +54,8 @@ def build_ssh_command(conf, localport, web_server):
     remote_command = "python -m SimpleHTTPServer {}".format(
         conf['port']) if web_server else "-N"
 
-    ssh_command = ['ssh', '-f', '{user}@{hostname}'.format(**conf), '-L',
+    ssh_command = ['ssh', '-o', 'TCPKeepAlive=yes', '-o', 'ServerAliveInterval=50',
+                   '-f', '{user}@{hostname}'.format(**conf), '-L',
                    '{localport}:localhost:{port}'.format(**conf),
                    remote_command, conf['uid']]
     return ssh_command
