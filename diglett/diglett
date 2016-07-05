@@ -27,7 +27,6 @@ import docopt
 from diglett import configs
 """
 TODO:
-x JSON save file not configs dict
 - allow user to tunnel somewhere that isnt saved
 - allow deletion of config option
 - allow listing of all configs (extra arg to ls mode)
@@ -35,7 +34,7 @@ x JSON save file not configs dict
 - create / close multiple connections in one command
 """
 
-tunnel_configs = configs.load_config()
+tunnel_configs = configs.load_or_get_empty_config()
 
 
 def tunnel(name, localport, web_server):

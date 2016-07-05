@@ -5,7 +5,15 @@ HOME_DIR = os.path.expanduser("~")
 CONFIG_PATH = os.path.join(HOME_DIR, ".dig.cfg")
 
 
-def load_config(config_path=CONFIG_PATH):
+def load_or_get_empty_config(config_path=CONFIG_PATH):
+    try:
+        config = load_config(config_path)
+    except IOError:
+        config = {}
+    return config
+
+
+def load_config(config_path):
     with open(config_path) as cfg_fd:
         config = json.load(cfg_fd)
     return config
