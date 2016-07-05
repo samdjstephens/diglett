@@ -7,7 +7,8 @@ setup(
     url='https://github.com/samdjstephens/diglett',
     packages=find_packages(),
     install_requires=[
-        'psutil'
+        'psutil',
+        'docopt'
     ],
     scripts=['diglett/diglett']
 )
