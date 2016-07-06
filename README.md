@@ -2,6 +2,10 @@
 
 ![diglett](http://cdn.bulbagarden.net/upload/thumb/3/31/050Diglett.png/250px-050Diglett.png)
 
+> to have a way of naming, opening and closing SSH tunnels without using `ps aux | grep ssh` —> `kill`
+
+-- samjdstephens, founding author of diglett
+
 # Install
 ```
 pip install git+git://github.com/samdjstephens/diglett.git
