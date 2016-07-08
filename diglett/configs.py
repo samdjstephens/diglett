@@ -30,7 +30,7 @@ def add_to_config(new_tunnel_conf, tunnel_configs):
         tunnel_configs.update(new_tunnel_conf)
         write_config(tunnel_configs)
         print ("Config for {0} added.\n"
-               "Use dig tunnel {0} to connect".format(new_conf_name))
+               "Use diglett tunnel {0} to connect".format(new_conf_name))
     else:
         print ("Config for name {} already exists. "
                "Please use another name".format(new_conf_name))
